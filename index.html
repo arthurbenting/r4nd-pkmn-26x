@@ -3,169 +3,136 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Randomizer — Figuras Políticas</title>
+<title>Randomizer</title>
 <style>
 *{box-sizing:border-box}
-html,body{margin:0;width:100%;height:100%;background:#050505;color:#fff;font-family:Arial,Helvetica,sans-serif;overflow:hidden}
-body{touch-action:manipulation}
-#camera{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1);background:#111}
-#shade{position:fixed;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.08) 35%,rgba(0,0,0,.78) 100%);pointer-events:none}
-#result{position:fixed;left:50%;top:5%;transform:translateX(-50%);width:min(78vw,430px);display:flex;flex-direction:column;align-items:center;gap:10px;z-index:4;pointer-events:none}
-#portraitWrap{width:min(43vw,220px);aspect-ratio:1/1;border-radius:50%;overflow:hidden;border:5px solid rgba(255,255,255,.95);background:#222;box-shadow:0 10px 35px rgba(0,0,0,.45)}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#3f3f3f}
+body{font-family:Arial,Helvetica,sans-serif;touch-action:manipulation}
+#app{position:fixed;inset:0;display:flex;flex-direction:column;background:#3f3f3f}
+#cameraArea{height:50%;width:100%;background:#111;overflow:hidden;display:flex;align-items:center;justify-content:center}
+#camera{width:100%;height:100%;object-fit:contain;transform:scaleX(-1);background:#111}
+#randomArea{height:50%;width:100%;background:#3f3f3f;display:flex;align-items:center;justify-content:center;cursor:pointer}
+#circle{
+  width:44vw;height:44vw;
+  max-width:230px;max-height:230px;
+  border-radius:50%;
+  overflow:hidden;
+  background:#fff;
+  box-shadow:0 2px 12px rgba(0,0,0,.16);
+}
 #portrait{width:100%;height:100%;object-fit:cover;display:block}
-#name{font-size:clamp(30px,7.8vw,58px);font-weight:900;line-height:.95;text-align:center;text-shadow:0 3px 12px #000;letter-spacing:-.045em}
-#label{font-size:13px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;opacity:.9;text-shadow:0 2px 8px #000}
-#tap{position:fixed;left:50%;bottom:max(26px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:5;border:0;border-radius:999px;padding:14px 22px;font-size:16px;font-weight:800;background:rgba(0,0,0,.62);color:#fff;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
-#start{position:fixed;inset:0;z-index:10;display:grid;place-items:center;background:#090909;padding:28px;text-align:center}
-#startCard{max-width:420px}
-#start h1{font-size:34px;margin:0 0 12px}
-#start p{line-height:1.4;color:#bbb;margin:0 0 22px}
-#start button{border:0;border-radius:999px;padding:16px 24px;font-size:18px;font-weight:900}
-#status{margin-top:14px;color:#aaa;font-size:13px}
-.rolling #portraitWrap{transform:scale(.95)}
-#portraitWrap{transition:transform .08s}
+#placeholder{width:100%;height:100%;background:#fff}
+#start{position:fixed;inset:0;z-index:10;display:grid;place-items:center;background:#111;color:#fff;text-align:center;padding:30px}
+#start>div{max-width:420px}
+#start h1{margin:0 0 12px;font-size:32px}
+#start p{margin:0 0 22px;color:#bbb;line-height:1.4}
+#start button{border:0;border-radius:999px;padding:16px 25px;font-size:17px;font-weight:800}
+#status{font-size:13px;color:#aaa;margin-top:14px}
+.rolling #circle{transform:scale(.96)}
+#circle{transition:transform .07s}
 </style>
 </head>
 <body>
-<video id="camera" autoplay muted playsinline></video>
-<div id="shade"></div>
-
-<div id="result">
-  <div id="label">FIGURA POLÍTICA</div>
-  <div id="portraitWrap"><img id="portrait" alt=""></div>
-  <div id="name">TOQUE PARA SORTEAR</div>
-</div>
-
-<button id="tap" type="button">TOQUE PARA SORTEAR</button>
-
-<div id="start">
-  <div id="startCard">
-    <h1>Randomizer</h1>
-    <p>Ative a câmera frontal. Depois, toque em qualquer área da tela para sortear uma figura política. Os nomes não se repetem até o ciclo terminar.</p>
-    <button id="cameraBtn" type="button">ATIVAR CÂMERA</button>
-    <div id="status"></div>
+<div id="app">
+  <div id="cameraArea"><video id="camera" autoplay muted playsinline></video></div>
+  <div id="randomArea">
+    <div id="circle"><div id="placeholder"></div><img id="portrait" alt="" hidden></div>
   </div>
 </div>
 
+<div id="start">
+ <div>
+   <h1>Randomizer</h1>
+   <p>Ative a câmera frontal. Depois toque na metade inferior para sortear uma foto.</p>
+   <button id="cameraBtn">ATIVAR CÂMERA</button>
+   <div id="status"></div>
+ </div>
+</div>
+
 <script>
-const people = [
-  ["Luiz Inácio Lula da Silva","Luiz_Inácio_Lula_da_Silva"],
-  ["Flávio Bolsonaro","Flávio_Bolsonaro"],
-  ["Jair Bolsonaro","Jair_Bolsonaro"],
-  ["Tarcísio de Freitas","Tarcísio_de_Freitas"],
-  ["Nikolas Ferreira","Nikolas_Ferreira"],
-  ["Michelle Bolsonaro","Michelle_Bolsonaro"],
-  ["Eduardo Bolsonaro","Eduardo_Bolsonaro"],
-  ["Ronaldo Caiado","Ronaldo_Caiado"],
-  ["Romeu Zema","Romeu_Zema"],
-  ["Renan Santos","Renan_Santos"],
-  ["Augusto Cury","Augusto_Cury"],
-  ["Fernando Haddad","Fernando_Haddad"],
-  ["Guilherme Boulos","Guilherme_Boulos"],
-  ["Marina Silva","Marina_Silva"],
-  ["Geraldo Alckmin","Geraldo_Alckmin"],
-  ["Tabata Amaral","Tabata_Amaral"],
-  ["Gleisi Hoffmann","Gleisi_Hoffmann"],
-  ["Simone Tebet","Simone_Tebet"],
-  ["Ciro Gomes","Ciro_Gomes"],
-  ["Pablo Marçal","Pablo_Marçal"]
+const people=[
+["Luiz Inácio Lula da Silva","Luiz_Inácio_Lula_da_Silva"],
+["Flávio Bolsonaro","Flávio_Bolsonaro"],
+["Jair Bolsonaro","Jair_Bolsonaro"],
+["Tarcísio de Freitas","Tarcísio_de_Freitas"],
+["Nikolas Ferreira","Nikolas_Ferreira"],
+["Michelle Bolsonaro","Michelle_Bolsonaro"],
+["Eduardo Bolsonaro","Eduardo_Bolsonaro"],
+["Ronaldo Caiado","Ronaldo_Caiado"],
+["Romeu Zema","Romeu_Zema"],
+["Renan Santos","Renan_Santos"],
+["Augusto Cury","Augusto_Cury"],
+["Fernando Haddad","Fernando_Haddad"],
+["Guilherme Boulos","Guilherme_Boulos"],
+["Marina Silva","Marina_Silva"],
+["Geraldo Alckmin","Geraldo_Alckmin"],
+["Tabata Amaral","Tabata_Amaral"],
+["Gleisi Hoffmann","Gleisi_Hoffmann"],
+["Simone Tebet","Simone_Tebet"],
+["Ciro Gomes","Ciro_Gomes"],
+["Pablo Marçal","Pablo_Marçal"]
 ];
 
 const camera=document.getElementById("camera");
 const portrait=document.getElementById("portrait");
-const nameEl=document.getElementById("name");
+const placeholder=document.getElementById("placeholder");
+const randomArea=document.getElementById("randomArea");
 const start=document.getElementById("start");
-const status=document.getElementById("status");
 const cameraBtn=document.getElementById("cameraBtn");
-const tap=document.getElementById("tap");
-
-let bag=[], rolling=false, photos=new Map();
+const status=document.getElementById("status");
+let bag=[],rolling=false,photos=new Map();
 
 function refill(){
-  bag=[...Array(people.length).keys()];
-  for(let i=bag.length-1;i>0;i--){
-    const j=Math.floor(Math.random()*(i+1));
-    [bag[i],bag[j]]=[bag[j],bag[i]];
-  }
+ bag=[...Array(people.length).keys()];
+ for(let i=bag.length-1;i>0;i--){
+   const j=Math.floor(Math.random()*(i+1));
+   [bag[i],bag[j]]=[bag[j],bag[i]];
+ }
 }
-
 async function getPhoto(i){
-  if(photos.has(i)) return photos.get(i);
-  const page=people[i][1];
-  try{
-    const r=await fetch("https://pt.wikipedia.org/api/rest_v1/page/summary/"+encodeURIComponent(page));
-    const d=await r.json();
-    const src=(d.thumbnail&&d.thumbnail.source)||(d.originalimage&&d.originalimage.source)||"";
-    photos.set(i,src);
-    return src;
-  }catch(e){
-    return "";
-  }
+ if(photos.has(i))return photos.get(i);
+ try{
+   const r=await fetch("https://pt.wikipedia.org/api/rest_v1/page/summary/"+encodeURIComponent(people[i][1]));
+   const d=await r.json();
+   const src=(d.thumbnail&&d.thumbnail.source)||(d.originalimage&&d.originalimage.source)||"";
+   photos.set(i,src); return src;
+ }catch(e){return ""}
 }
-
-async function showPerson(i){
-  nameEl.textContent=people[i][0];
-  const src=await getPhoto(i);
-  if(src){
-    portrait.src=src;
-    portrait.alt="Foto de "+people[i][0];
-  }else{
-    portrait.removeAttribute("src");
-    portrait.alt="";
-  }
+async function display(i){
+ const src=await getPhoto(i);
+ if(src){portrait.src=src;portrait.hidden=false;placeholder.hidden=true}
 }
-
 async function draw(){
-  if(rolling || start.style.display!=="none") return;
-  if(!bag.length) refill();
-  rolling=true;
-  document.body.classList.add("rolling");
-  let ticks=0;
-  const total=15;
-  const timer=setInterval(async()=>{
-    const i=Math.floor(Math.random()*people.length);
-    nameEl.textContent=people[i][0];
-    const src=photos.get(i);
-    if(src) portrait.src=src;
-    ticks++;
-    if(ticks>=total){
-      clearInterval(timer);
-      const chosen=bag.pop();
-      await showPerson(chosen);
-      document.body.classList.remove("rolling");
-      rolling=false;
-    }
-  },70);
+ if(rolling)return;
+ if(!bag.length)refill();
+ rolling=true;document.body.classList.add("rolling");
+ let ticks=0;
+ const timer=setInterval(async()=>{
+   const i=Math.floor(Math.random()*people.length);
+   const src=photos.get(i);
+   if(src){portrait.src=src;portrait.hidden=false;placeholder.hidden=true}
+   ticks++;
+   if(ticks>=16){
+     clearInterval(timer);
+     await display(bag.pop());
+     rolling=false;document.body.classList.remove("rolling");
+   }
+ },70);
 }
-
-cameraBtn.addEventListener("click",async()=>{
-  status.textContent="Abrindo câmera…";
-  try{
-    const stream=await navigator.mediaDevices.getUserMedia({
-      video:{facingMode:"user",width:{ideal:1080},height:{ideal:1920}},
-      audio:false
-    });
-    camera.srcObject=stream;
-    await camera.play();
-    start.style.display="none";
-    status.textContent="";
-    refill();
-    people.forEach((_,i)=>getPhoto(i));
-  }catch(e){
-    status.textContent="Não foi possível abrir a câmera. Abra este arquivo em um site HTTPS e permita o acesso à câmera.";
-  }
-});
-
-document.body.addEventListener("click",e=>{
-  if(e.target===cameraBtn || start.style.display!=="none") return;
-  draw();
-});
-
-document.addEventListener("keydown",e=>{
-  if((e.code==="Space"||e.code==="Enter"||e.code==="ArrowRight") && start.style.display==="none"){
-    e.preventDefault(); draw();
-  }
-});
+cameraBtn.onclick=async()=>{
+ status.textContent="Abrindo câmera…";
+ try{
+   const stream=await navigator.mediaDevices.getUserMedia({
+     video:{facingMode:"user"},audio:false
+   });
+   camera.srcObject=stream; await camera.play();
+   start.style.display="none"; refill();
+   people.forEach((_,i)=>getPhoto(i));
+ }catch(e){
+   status.textContent="Não foi possível abrir a câmera. Verifique a permissão do navegador.";
+ }
+};
+randomArea.addEventListener("click",draw);
 </script>
 </body>
 </html>
