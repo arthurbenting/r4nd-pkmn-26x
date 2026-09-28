@@ -3,134 +3,81 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Randomizer</title>
+<title>Randomizer — Figuras Públicas</title>
 <style>
 *{box-sizing:border-box}
-html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#3f3f3f}
-body{font-family:Arial,Helvetica,sans-serif;touch-action:manipulation}
-#app{position:fixed;inset:0;display:flex;flex-direction:column;background:#3f3f3f}
-#cameraArea{height:50%;width:100%;background:#111;overflow:hidden;display:flex;align-items:center;justify-content:center}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#3f3f3f;font-family:Arial,sans-serif}
+body{touch-action:manipulation}
+#app{position:fixed;inset:0;display:flex;flex-direction:column}
+#cameraArea{height:50%;background:#111;display:flex;align-items:center;justify-content:center;overflow:hidden}
 #camera{width:100%;height:100%;object-fit:contain;transform:scaleX(-1);background:#111}
-#randomArea{height:50%;width:100%;background:#3f3f3f;display:flex;align-items:center;justify-content:center;cursor:pointer}
-#circle{
-  width:44vw;height:44vw;
-  max-width:230px;max-height:230px;
-  border-radius:50%;
-  overflow:hidden;
-  background:#fff;
-  box-shadow:0 2px 12px rgba(0,0,0,.16);
-}
+#randomArea{height:50%;background:#3f3f3f;display:flex;align-items:center;justify-content:center;cursor:pointer}
+#circle{width:44vw;height:44vw;max-width:230px;max-height:230px;border-radius:50%;overflow:hidden;background:#fff;box-shadow:0 2px 12px #0003;transition:transform .07s}
 #portrait{width:100%;height:100%;object-fit:cover;display:block}
 #placeholder{width:100%;height:100%;background:#fff}
+.rolling #circle{transform:scale(.96)}
 #start{position:fixed;inset:0;z-index:10;display:grid;place-items:center;background:#111;color:#fff;text-align:center;padding:30px}
 #start>div{max-width:420px}
 #start h1{margin:0 0 12px;font-size:32px}
 #start p{margin:0 0 22px;color:#bbb;line-height:1.4}
 #start button{border:0;border-radius:999px;padding:16px 25px;font-size:17px;font-weight:800}
 #status{font-size:13px;color:#aaa;margin-top:14px}
-.rolling #circle{transform:scale(.96)}
-#circle{transition:transform .07s}
 </style>
 </head>
 <body>
 <div id="app">
-  <div id="cameraArea"><video id="camera" autoplay muted playsinline></video></div>
-  <div id="randomArea">
-    <div id="circle"><div id="placeholder"></div><img id="portrait" alt="" hidden></div>
-  </div>
+ <div id="cameraArea"><video id="camera" autoplay muted playsinline></video></div>
+ <div id="randomArea"><div id="circle"><div id="placeholder"></div><img id="portrait" alt="" hidden></div></div>
 </div>
-
-<div id="start">
- <div>
-   <h1>Randomizer</h1>
-   <p>Ative a câmera frontal. Depois toque na metade inferior para sortear uma foto.</p>
-   <button id="cameraBtn">ATIVAR CÂMERA</button>
-   <div id="status"></div>
- </div>
-</div>
-
+<div id="start"><div>
+ <h1>Randomizer</h1>
+ <p>Ative a câmera frontal. Depois toque na metade inferior para sortear uma foto.</p>
+ <button id="cameraBtn">ATIVAR CÂMERA</button><div id="status"></div>
+</div></div>
 <script>
 const people=[
-["Luiz Inácio Lula da Silva","Luiz_Inácio_Lula_da_Silva"],
-["Flávio Bolsonaro","Flávio_Bolsonaro"],
-["Jair Bolsonaro","Jair_Bolsonaro"],
-["Tarcísio de Freitas","Tarcísio_de_Freitas"],
-["Nikolas Ferreira","Nikolas_Ferreira"],
-["Michelle Bolsonaro","Michelle_Bolsonaro"],
-["Eduardo Bolsonaro","Eduardo_Bolsonaro"],
-["Ronaldo Caiado","Ronaldo_Caiado"],
-["Romeu Zema","Romeu_Zema"],
-["Renan Santos","Renan_Santos"],
-["Augusto Cury","Augusto_Cury"],
-["Fernando Haddad","Fernando_Haddad"],
-["Guilherme Boulos","Guilherme_Boulos"],
-["Marina Silva","Marina_Silva"],
-["Geraldo Alckmin","Geraldo_Alckmin"],
-["Tabata Amaral","Tabata_Amaral"],
-["Gleisi Hoffmann","Gleisi_Hoffmann"],
-["Simone Tebet","Simone_Tebet"],
-["Ciro Gomes","Ciro_Gomes"],
-["Pablo Marçal","Pablo_Marçal"]
+ ["Flávio Bolsonaro","Flávio_Bolsonaro"],
+ ["Lula","Luiz_Inácio_Lula_da_Silva"],
+ ["Daniel Vorcaro","Daniel_Vorcaro"],
+ ["Flávio Dino","Flávio_Dino"],
+ ["Alexandre de Moraes","Alexandre_de_Moraes"],
+ ["André Mendonça","André_Mendonça"]
 ];
-
-const camera=document.getElementById("camera");
-const portrait=document.getElementById("portrait");
-const placeholder=document.getElementById("placeholder");
-const randomArea=document.getElementById("randomArea");
-const start=document.getElementById("start");
-const cameraBtn=document.getElementById("cameraBtn");
-const status=document.getElementById("status");
+const camera=document.getElementById("camera"),portrait=document.getElementById("portrait"),
+placeholder=document.getElementById("placeholder"),randomArea=document.getElementById("randomArea"),
+start=document.getElementById("start"),cameraBtn=document.getElementById("cameraBtn"),status=document.getElementById("status");
 let bag=[],rolling=false,photos=new Map();
 
-function refill(){
- bag=[...Array(people.length).keys()];
- for(let i=bag.length-1;i>0;i--){
-   const j=Math.floor(Math.random()*(i+1));
-   [bag[i],bag[j]]=[bag[j],bag[i]];
- }
-}
+function refill(){bag=[...Array(people.length).keys()];for(let i=bag.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[bag[i],bag[j]]=[bag[j],bag[i]]}}
 async function getPhoto(i){
  if(photos.has(i))return photos.get(i);
  try{
-   const r=await fetch("https://pt.wikipedia.org/api/rest_v1/page/summary/"+encodeURIComponent(people[i][1]));
-   const d=await r.json();
-   const src=(d.thumbnail&&d.thumbnail.source)||(d.originalimage&&d.originalimage.source)||"";
-   photos.set(i,src); return src;
+  const r=await fetch("https://pt.wikipedia.org/api/rest_v1/page/summary/"+encodeURIComponent(people[i][1]));
+  const d=await r.json();
+  const src=(d.thumbnail&&d.thumbnail.source)||(d.originalimage&&d.originalimage.source)||"";
+  photos.set(i,src);return src;
  }catch(e){return ""}
 }
 async function display(i){
  const src=await getPhoto(i);
  if(src){portrait.src=src;portrait.hidden=false;placeholder.hidden=true}
+ else{portrait.hidden=true;placeholder.hidden=false}
 }
 async function draw(){
- if(rolling)return;
- if(!bag.length)refill();
- rolling=true;document.body.classList.add("rolling");
+ if(rolling)return;if(!bag.length)refill();rolling=true;document.body.classList.add("rolling");
  let ticks=0;
- const timer=setInterval(async()=>{
-   const i=Math.floor(Math.random()*people.length);
-   const src=photos.get(i);
-   if(src){portrait.src=src;portrait.hidden=false;placeholder.hidden=true}
-   ticks++;
-   if(ticks>=16){
-     clearInterval(timer);
-     await display(bag.pop());
-     rolling=false;document.body.classList.remove("rolling");
-   }
+ const timer=setInterval(()=>{
+  const i=Math.floor(Math.random()*people.length),src=photos.get(i);
+  if(src){portrait.src=src;portrait.hidden=false;placeholder.hidden=true}
+  if(++ticks>=14){clearInterval(timer);display(bag.pop()).then(()=>{rolling=false;document.body.classList.remove("rolling")})}
  },70);
 }
 cameraBtn.onclick=async()=>{
  status.textContent="Abrindo câmera…";
  try{
-   const stream=await navigator.mediaDevices.getUserMedia({
-     video:{facingMode:"user"},audio:false
-   });
-   camera.srcObject=stream; await camera.play();
-   start.style.display="none"; refill();
-   people.forEach((_,i)=>getPhoto(i));
- }catch(e){
-   status.textContent="Não foi possível abrir a câmera. Verifique a permissão do navegador.";
- }
+  const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"user"},audio:false});
+  camera.srcObject=stream;await camera.play();start.style.display="none";refill();people.forEach((_,i)=>getPhoto(i));
+ }catch(e){status.textContent="Não foi possível abrir a câmera. Verifique a permissão do navegador."}
 };
 randomArea.addEventListener("click",draw);
 </script>
